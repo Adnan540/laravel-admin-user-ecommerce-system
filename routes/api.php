@@ -4,6 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\{
     AuthController,
+    CategoryController,
     ProductController,
     UserController,
     TraderApplicationController,
@@ -15,7 +16,6 @@ use App\Http\Controllers\Api\{
     WishlistController,
     CartController
 };
-use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\Api\Admins\{
     AdminProductController,
     AdminCategoryController,
@@ -39,17 +39,15 @@ Route::post('/auth/admin-register', [AuthController::class, 'registerasAdmin']);
 
 
 // Public access to products, categories, etc. (optional)
-Route::apiResource('products', ProductController::class)->only(['index', 'show']);
-Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
+Route::apiResource('products', ProductController::class);
+Route::apiResource('categories', CategoryController::class);
+
 // Public access to shipping methods
 Route::apiResource('shipping-methods', ShippingMethodController::class)->only(['index', 'show']);
 Route::apiResource('traders-applications', TraderApplicationController::class);
 Route::apiResource('contact', ContactMessagesController::class);
 Route::apiResource('copons', \App\Http\Controllers\Api\CouponController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
-
-
-
-
+Route::apiResource('users', UserController::class);
 /*
 |--------------------------------------------------------------------------
 | Protected Routes (Require Login)
@@ -61,7 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/auth/delete', [AuthController::class, 'deleteAccount']);
 
     // Full access to user-related resources
-    Route::apiResource('users', UserController::class);
+
     Route::apiResource('orders', OrderController::class);
     Route::apiResource('shipping-addresses', ShippingAddressController::class);
     Route::apiResource('payments', PaymentController::class);
@@ -80,9 +78,9 @@ Route::middleware('auth:sanctum')->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth:sanctum', 'is_admin'])->prefix('admin')->group(function () {
-    Route::get('/dashboard', [AdminDashboardController::class, 'index']);
+    Route::get('dashboard', [AdminDashboardController::class, 'index']);
     Route::apiResource('products', AdminProductController::class);
     Route::apiResource('categories', AdminCategoryController::class);
-    Route::apiResource('users', AdminUserController::class);
+    // Route::apiResource('users', AdminUserController::class);
     Route::apiResource('trader-applications', AdminTraderApplicationController::class);
 });

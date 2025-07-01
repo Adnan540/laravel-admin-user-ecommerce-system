@@ -14,7 +14,7 @@ class TraderApplicationController extends Controller
 {
     public function index()
     {
-        return TraderApplication::get()->Latest(); // Fetch all trader applications by latest
+        return TraderApplication::get(); // Fetch all trader applications by latest
     }
 
     public function store(Request $request)

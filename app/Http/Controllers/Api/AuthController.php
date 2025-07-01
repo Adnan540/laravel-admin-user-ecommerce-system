@@ -66,6 +66,7 @@ class AuthController extends Controller
         return response()->json($request->user());
     }
 
+
     //delete user account
     public function deleteAccount(Request $request)
     {

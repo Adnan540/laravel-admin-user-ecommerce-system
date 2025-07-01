@@ -41,7 +41,7 @@ class AdminProductController extends Controller
             'category_id' => 'required|exists:categories,id',
             'weight' => 'required|numeric|min:0',
             'weight_unit' => 'required|string|in:kg,g,lb,oz',
-            'image_url' => 'required|url',
+            'image_url' => 'url',
         ]);
 
         //check if validation fails

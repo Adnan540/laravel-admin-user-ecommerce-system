@@ -16,7 +16,7 @@ class AdminUserController extends Controller
     //get all users
     public function index()
     {
-        $user = User::with('cart', 'wishlist', 'orders', 'payments', 'shippingAddress',)->latest()->get();
+        $user = User::with('cart', 'wishlist', 'orders', 'payments', 'shippingAddresses',)->latest()->get();
 
         if (!$user) {
             $failedMessage = [
@@ -102,7 +102,7 @@ class AdminUserController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => 'required|string|min:8|',
             // Add more fields if needed
         ]);
 
