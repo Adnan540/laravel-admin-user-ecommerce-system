@@ -57,7 +57,9 @@ class ContactMessagesController extends Controller
             'email' => 'required|email|max:255',
             'subject' => 'required|string|max:255',
             'message' => 'required|string',
+            'phone' => 'required|string|max:15',
         ]);
+
         // Check if validation fails
         if ($validatedData->fails()) {
             return response()->json([
@@ -72,7 +74,9 @@ class ContactMessagesController extends Controller
                 'email' => $request->email,
                 'subject' => $request->subject,
                 'message' => $request->message,
-            ]);
+                'phone' => $request->phone,
+            ])->save(); // Save the contact message
+
             $successMessage = [
                 'Message' => 'Contact Message created successfully',
                 'data' => $contactMessage,

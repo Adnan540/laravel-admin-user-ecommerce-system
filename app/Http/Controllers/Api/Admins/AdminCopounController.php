@@ -87,11 +87,9 @@ class AdminCopounController extends Controller
         //validate requested data
         $validator = Validator::make($request->all(), [
             'code' => 'required|string|max:255',
-            'discount' => 'required|numeric|min:0',
-            'type' => 'required|string|in:percentage,amount',
-            'start_date' => 'required|date',
-            'end_date' => 'required|date|after_or_equal:start_date',
-            'status' => 'required|boolean',
+            'discount_percent' => 'required|numeric|min:0',
+            'expire_at' => 'required|date_format:Y-m-d',
+            'max_uses' => 'required|integer|min:1',
         ]);
 
         //check if validation fails

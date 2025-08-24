@@ -49,6 +49,7 @@ class CartController extends Controller
     {
         $data = $request->validate([
             'quantity' => 'required|integer|min:1',
+            'product_id' => 'sometimes|exists:products,id', // optional, can be used to change product
         ]);
         $item = CartItem::where('id', $id)->where('cart_id', Cart::where('user_id', Auth::id())->first()->id)->first();
         if (!$item) {

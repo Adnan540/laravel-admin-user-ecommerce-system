@@ -10,7 +10,7 @@ class CouponController extends Controller
 {
     public function index()
     {
-        return Coupon::all();
+        return Coupon::all(); // Return all coupons
     }
 
     public function store(Request $request)

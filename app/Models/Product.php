@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Product extends Model
 {
     use HasFactory;
-
+    public $tranlatable = ['name', 'description'];
     protected $fillable = ['name', 'description', 'price', 'discount_price', 'category_id', 'weight', 'weight_unit', 'image_url'];
     protected $casts = [
         'price' => 'decimal:2',

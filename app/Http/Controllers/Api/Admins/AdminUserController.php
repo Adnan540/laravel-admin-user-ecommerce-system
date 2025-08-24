@@ -26,7 +26,7 @@ class AdminUserController extends Controller
             return response()->json([$failedMessage,], 404);
         } else {
             return response()->json([
-                'Message' => 'user found',
+                'Message' => 'users found',
                 'data' => $user,
                 'status' => 'user has been found'
             ], 200);

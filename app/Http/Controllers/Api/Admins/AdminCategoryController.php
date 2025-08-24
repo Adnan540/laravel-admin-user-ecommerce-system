@@ -72,5 +72,36 @@ class AdminCategoryController extends Controller
     }
 
     // update category by passing id
+    public function update(Request $request, $id)
+    {
+        $category = Category::find($id);
+        if (!$category) {
+            return response()->json([
+                'message' => 'Category not found',
+                'status' => 'error'
+            ], 404);
+        }
 
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string',
+            'parent_id' => 'nullable|exists:categories,id',
+            'description' => 'nullable|string',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+                'status' => 'error'
+            ], 422);
+        }
+
+        $category->update($validator->validated());
+
+        return response()->json([
+            'message' => 'Category updated successfully',
+            'data' => $category,
+            'status' => 'success'
+        ], 200);
+    }
 }
