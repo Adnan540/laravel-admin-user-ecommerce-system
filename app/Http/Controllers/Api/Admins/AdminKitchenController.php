@@ -1,21 +1,35 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Admins;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Kitchen;
 
-class KitchenController extends Controller
+
+class AdminKitchenController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    public function __construct()
+    {
+        $this->middleware(['auth:sanctum', 'is_admin']);
+    }
+
     public function index()
     {
-        // Logic to retrieve and return a list of kitchen items
-        return response()->json(['message' => 'List of kitchen items']);
-        return Kitchen::all();
+        $kitchen = Kitchen::Latest()->get();
+        if (!$kitchen) {
+            return response()->json([
+                'message' => 'kitchen found',
+                'status' => 'error'
+            ], 404);
+        } else {
+            $successMessage = [
+                'Message' => 'Copoun found',
+                'data' => $kitchen,
+                'status' => 'Success'
+            ];
+            return response()->json([$successMessage], 200);
+        }
     }
 
     /**

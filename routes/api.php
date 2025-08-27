@@ -14,14 +14,17 @@ use App\Http\Controllers\Api\{
     ShippingMethodController,
     ContactMessagesController,
     WishlistController,
-    CartController
+    CartController,
+    KitchenController
 };
 use App\Http\Controllers\Api\Admins\{
     AdminProductController,
     AdminCategoryController,
     AdminUserController,
     AdminTraderApplicationController,
-    AdminDashboardController
+    AdminDashboardController,
+    AdminOrderController,
+    AdminKitchenController
 };
 use App\Models\Wishlist;
 
@@ -41,6 +44,7 @@ Route::post('/auth/admin-register', [AuthController::class, 'registerasAdmin']);
 // Public access to products, categories, etc. (optional)
 Route::apiResource('products', ProductController::class);
 Route::apiResource('categories', CategoryController::class);
+Route::apiResource('kitchen', KitchenController::class);
 
 // Public access to shipping methods
 Route::apiResource('shipping-methods', ShippingMethodController::class)->only(['index', 'show']);
@@ -83,4 +87,6 @@ Route::middleware(['auth:sanctum', 'is_admin'])->prefix('admin')->group(function
     Route::apiResource('users', AdminUserController::class);
     Route::apiResource('trader-applications', AdminTraderApplicationController::class);
     Route::apiResource('copouns', \App\Http\Controllers\Api\Admins\AdminCopounController::class);
+    Route::apiResource('orders', AdminOrderController::class);
+    Route::apiResource('kitchen', AdminKitchenController::class);
 });
