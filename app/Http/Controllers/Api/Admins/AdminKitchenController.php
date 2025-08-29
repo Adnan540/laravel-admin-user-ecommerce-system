@@ -24,7 +24,7 @@ class AdminKitchenController extends Controller
             ], 404);
         } else {
             $successMessage = [
-                'Message' => 'Copoun found',
+                'Message' => 'kitchen found',
                 'data' => $kitchen,
                 'status' => 'Success'
             ];

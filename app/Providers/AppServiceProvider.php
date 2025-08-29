@@ -4,28 +4,23 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\App;
-use Illuminate\Http\Request;
+use App\Models\Order;
+use App\Observers\OrderObserver; // ✅ the only import you need
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     *
-     * @return void
-     */
-    public function register()
-    {
-        // Register any application services here
-    }
+    public function register() {}
 
-    /**
-     * Bootstrap any application services.
-     *
-     * @return void
-     */
-    public function boot()
+    public function boot(): void
     {
-        // Set the locale based on the request's Accept-Language header
-        App::setLocale(request()->getPreferredLanguage(['en', 'es', 'fr', 'de', 'ar']));
+        // Optional: avoid using request in console
+        if (! $this->app->runningInConsole()) {
+            App::setLocale(request()->getPreferredLanguage(['en', 'es', 'fr', 'de', 'ar']) ?? config('app.locale'));
+        }
+
+        // Guard so the app doesn’t crash before the file exists
+        if (class_exists(OrderObserver::class)) {
+            Order::observe(OrderObserver::class); // ✅ use FQCN, not a string
+        }
     }
 }

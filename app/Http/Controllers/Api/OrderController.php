@@ -8,6 +8,9 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use App\Models\User;
+use App\Notifications\NewOrderNotification;
+use App\Events\OrderPlaced;
 
 class OrderController extends Controller
 {
@@ -56,7 +59,14 @@ class OrderController extends Controller
                     'price_at_purchase' => $item['price'],
                 ]);
             }
+            OrderPlaced::dispatch($order);
             DB::commit(); // If everything above was successful, all changes are permanently saved in the database.
+
+            // notify admins AFTER the order exists
+            User::whereIn('role', ['admin', 'superadmin'])->get()
+                ->each(fn($u) => $u->notify(new NewOrderNotification($order)));
+
+            return response()->json(['message' => 'Order placed', 'data' => $order], 201);
 
             $successMessage = [
                 'Message' => 'Order placed successfully',

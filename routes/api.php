@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\{
     CartController,
     KitchenController
 };
+use App\Http\Controllers\Api\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Api\Admins\{
     AdminProductController,
     AdminCategoryController,
@@ -24,7 +25,8 @@ use App\Http\Controllers\Api\Admins\{
     AdminTraderApplicationController,
     AdminDashboardController,
     AdminOrderController,
-    AdminKitchenController
+    AdminKitchenController,
+    NotificationController
 };
 use App\Models\Wishlist;
 
@@ -89,4 +91,7 @@ Route::middleware(['auth:sanctum', 'is_admin'])->prefix('admin')->group(function
     Route::apiResource('copouns', \App\Http\Controllers\Api\Admins\AdminCopounController::class);
     Route::apiResource('orders', AdminOrderController::class);
     Route::apiResource('kitchen', AdminKitchenController::class);
+    Route::get('notifications', [AdminNotificationController::class, 'index']);
+    Route::post('notifications/{id}/read', [AdminNotificationController::class, 'markRead']);
+    Route::post('notifications/read-all', [AdminNotificationController::class, 'markAllRead']);
 });
