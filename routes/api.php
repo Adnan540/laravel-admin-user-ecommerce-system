@@ -4,7 +4,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\{
     AuthController,
-    CategoryController,
+    // CategoryController,
     ProductController,
     UserController,
     TraderApplicationController,
@@ -15,8 +15,13 @@ use App\Http\Controllers\Api\{
     ContactMessagesController,
     WishlistController,
     CartController,
-    KitchenController
+    KitchenController,
 };
+use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\Me\OrdersController;
+use App\Http\Controllers\Api\Me\ProfileController;
+use App\Http\Controllers\Api\Me\PasswordController;
+
 use App\Http\Controllers\Api\Admin\NotificationController as AdminNotificationController;
 use App\Http\Controllers\Api\Admins\{
     AdminProductController,
@@ -28,6 +33,7 @@ use App\Http\Controllers\Api\Admins\{
     AdminKitchenController,
     NotificationController
 };
+use App\Http\Controllers\CategoryController as ControllersCategoryController;
 use App\Models\Wishlist;
 
 /*
@@ -48,6 +54,7 @@ Route::apiResource('products', ProductController::class);
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('kitchen', KitchenController::class);
 
+
 // Public access to shipping methods
 Route::apiResource('shipping-methods', ShippingMethodController::class)->only(['index', 'show']);
 Route::apiResource('traders-applications', TraderApplicationController::class);
@@ -62,7 +69,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::delete('/auth/delete', [AuthController::class, 'deleteAccount']);
-
+    Route::get('/me', [ProfileController::class, 'show']);
+    Route::put('/me', [ProfileController::class, 'update']);
+    Route::put('/me/password', [PasswordController::class, 'update']);
+    Route::get('/me/orders', [OrdersController::class, 'index']);
     // Full access to user-related resources
     Route::apiResource('users', UserController::class);
     Route::apiResource('orders', OrderController::class);

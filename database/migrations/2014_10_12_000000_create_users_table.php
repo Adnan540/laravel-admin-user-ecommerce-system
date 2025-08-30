@@ -19,6 +19,10 @@ return new class extends Migration
             $table->rememberToken();
             $table->boolean('is_admin')->default(false);
             $table->timestamps();
+            $table->string('phone')->nullable();
+            $table->string('company')->nullable();
+            $table->string('country', 2)->nullable();
+            $table->string('location')->nullable();
         });
     }
 
