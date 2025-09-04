@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Api\Admins;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Kitchen;
-
+use Illuminate\Support\Facades\Storage;
 
 class AdminKitchenController extends Controller
 {
@@ -14,76 +14,122 @@ class AdminKitchenController extends Controller
         $this->middleware(['auth:sanctum', 'is_admin']);
     }
 
+    // List all kitchen items
     public function index()
     {
-        $kitchen = Kitchen::Latest()->get();
-        if (!$kitchen) {
-            return response()->json([
-                'message' => 'kitchen found',
-                'status' => 'error'
-            ], 404);
-        } else {
-            $successMessage = [
-                'Message' => 'kitchen found',
-                'data' => $kitchen,
-                'status' => 'Success'
-            ];
-            return response()->json([$successMessage], 200);
-        }
+        $kitchen = Kitchen::latest()->get();
+
+        return response()->json([
+            'message' => $kitchen->isEmpty() ? 'No kitchen items found' : 'Kitchen items found',
+            'data'    => $kitchen, // each item includes image_full_url from accessor
+            'status'  => 'success',
+        ], 200);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    // Create
     public function store(Request $request)
     {
-        // Logic to validate and store a new kitchen item
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'image' => 'nullable|image',
-            'price' => 'nullable|numeric',
+        $data = $request->validate([
+            'title'           => 'required|string|max:255',
+            'title_en'        => 'nullable|string|max:255',
+            'description'     => 'nullable|string',
+            'description_en'  => 'nullable|string',
+            'price'           => 'required|numeric|min:0',
+
+            // one of these two must be provided
+            'image'           => 'required_without:image_url|image|mimes:jpg,jpeg,png,webp,avif|max:4096',
+            'image_url'       => 'required_without:image|url',
         ]);
 
-        // Assuming Kitchen is a model that handles the kitchen items
-        $kitchenItem = Kitchen::create($request->all());
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('kitchen', 'public');
+            $data['image'] = $path; // store relative path in DB
+        } else {
+            $data['image'] = $request->input('image_url');
+        }
 
-        return response()->json(['message' => 'Kitchen item created successfully', 'item' => $kitchenItem], 201);
+        unset($data['image_url']);
+
+        $item = Kitchen::create($data);
+
+        return response()->json([
+            'message' => 'Kitchen item created successfully',
+            'data'    => $item, // accessor adds image_full_url automatically
+            'status'  => 'success',
+        ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id) {}
+    // Show one
+    public function show(string $id)
+    {
+        $item = Kitchen::find($id);
+        if (!$item) {
+            return response()->json(['message' => 'Kitchen item not found'], 404);
+        }
 
-    /**
-     * Update the specified resource in storage.
-     */
+        return response()->json([
+            'message' => 'Kitchen item found',
+            'data'    => $item,
+            'status'  => 'success',
+        ], 200);
+    }
+
+    // Update
     public function update(Request $request, string $id)
     {
-        // Logic to validate and update an existing kitchen item
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'image' => 'nullable|image',
-            'price' => 'nullable|numeric',
+        $item = Kitchen::find($id);
+        if (!$item) {
+            return response()->json(['message' => 'Kitchen item not found'], 404);
+        }
+
+        $data = $request->validate([
+            'title'           => 'sometimes|required|string|max:255',
+            'title_en'        => 'sometimes|nullable|string|max:255',
+            'description'     => 'sometimes|nullable|string',
+            'description_en'  => 'sometimes|nullable|string',
+            'price'           => 'sometimes|required|numeric|min:0',
+            'image'           => 'sometimes|nullable|image|mimes:jpg,jpeg,png,webp,avif|max:4096',
+            'image_url'       => 'sometimes|nullable|url',
         ]);
 
-        $kitchenItem = Kitchen::findOrFail($id);
-        $kitchenItem->update($request->all());
+        if ($request->hasFile('image')) {
+            if ($item->image && !str_starts_with($item->image, 'http')) {
+                Storage::disk('public')->delete($item->image);
+            }
+            $path = $request->file('image')->store('kitchen', 'public');
+            $data['image'] = $path;
+        } elseif ($request->filled('image_url')) {
+            $data['image'] = $request->input('image_url');
+        }
 
-        return response()->json(['message' => 'Kitchen item updated successfully', 'item' => $kitchenItem]);
+        unset($data['image_url']);
+
+        $item->update($data);
+
+        return response()->json([
+            'message' => 'Kitchen item updated successfully',
+            'data'    => $item->fresh(), // includes image_full_url
+            'status'  => 'success',
+        ], 200);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+    // Delete
     public function destroy(string $id)
     {
-        // Logic to delete a kitchen item
-        $kitchenItem = Kitchen::findOrFail($id);
-        $kitchenItem->delete();
+        $item = Kitchen::find($id);
+        if (!$item) {
+            return response()->json(['message' => 'Kitchen item not found'], 404);
+        }
 
-        return response()->json(['message' => 'Kitchen item deleted successfully']);
+        if ($item->image && !str_starts_with($item->image, 'http')) {
+            Storage::disk('public')->delete($item->image);
+        }
+
+        $item->delete();
+
+        return response()->json([
+            'message' => 'Kitchen item deleted successfully',
+            'status'  => 'success',
+        ], 200);
     }
 }

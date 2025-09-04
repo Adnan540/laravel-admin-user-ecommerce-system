@@ -22,35 +22,32 @@ class OrderController extends Controller
             ->get();
     }
 
-    // make a new order
     public function store(Request $request)
     {
         $request->validate([
-            'items' => 'required|array|min:1', // at least one item is required
-            'items.*.product_id' => 'required|exists:products,id', // product_id must exist in products table
-            'items.*.quantity' => 'required|integer|min:1', // quantity must be a positive integer
-            'items.*.price' => 'required|numeric|min:0', // price must be a non-negative number
-            'total_price' => 'required|numeric|min:0', // total_price must be a non-negative number
-            'shipping_address_id' => 'required|exists:shipping_addresses,id', // shipping_address_id must exist in shipping_addresses table
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'items.*.price' => 'required|numeric|min:0',
+            'total_price' => 'required|numeric|min:0',
+            'shipping_address_id' => 'required|exists:shipping_addresses,id',
         ]);
 
-        //Calculate total price on server
+        // Calculate total on server
         $calculatedTotal = collect($request->items)
             ->sum(fn($item) => $item['price'] * $item['quantity']);
 
-        DB::beginTransaction(); // Start a database transaction
+        DB::beginTransaction();
 
-        //try catch block to handle any exceptions during order creation
         try {
             $order = Order::create([
-                'user_id' => Auth::id(), //get ID of authenticated user
+                'user_id' => Auth::id(),
                 'status' => 'pending',
-                'total_price' => $calculatedTotal, // total price calculated from items
+                'total_price' => $calculatedTotal,
                 'shipping_address_id' => $request->shipping_address_id,
                 'payment_id' => null,
             ]);
 
-            // foreach loop used for array of items to create order items
             foreach ($request->items as $item) {
                 OrderItem::create([
                     'order_id' => $order->id,
@@ -59,26 +56,22 @@ class OrderController extends Controller
                     'price_at_purchase' => $item['price'],
                 ]);
             }
-            OrderPlaced::dispatch($order);
-            DB::commit(); // If everything above was successful, all changes are permanently saved in the database.
 
-            // notify admins AFTER the order exists
+            DB::commit();
+
+            // Fire event AFTER commit (email + admin notifications handled by listeners)
+            event(new \App\Events\OrderPlaced($order->fresh()));
+
+            // Optional: notify admins instantly (separate from email)
             User::whereIn('role', ['admin', 'superadmin'])->get()
                 ->each(fn($u) => $u->notify(new NewOrderNotification($order)));
 
-            return response()->json(['message' => 'Order placed', 'data' => $order], 201);
-
-            $successMessage = [
-                'Message' => 'Order placed successfully',
-                'Order ID' => $order->id,
-                'Total Price' => $request->total_price,
-                'Shipping Address ID' => $request->shipping_address_id,
-                'Items' => $request->items,
-                'order' => Order::with('items.product')->find($order->id),
-            ];
-            return response()->json([$successMessage], 201);
-        } catch (\Exception $e) { //in case of exception
-            DB::rollBack(); // Rollback the transaction if there is an error
+            return response()->json([
+                'message' => 'Order placed successfully',
+                'data' => $order->load('items.product')
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
             return response()->json([
                 'message' => 'Failed to place order',
                 'error' => $e->getMessage()

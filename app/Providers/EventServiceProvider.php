@@ -5,7 +5,10 @@ namespace App\Providers;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
-use Illuminate\Support\Facades\Event;
+
+// ADD these:
+use App\Events\OrderPlaced;
+use App\Listeners\SendOrderConfirmation;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -18,11 +21,13 @@ class EventServiceProvider extends ServiceProvider
         Registered::class => [
             SendEmailVerificationNotification::class,
         ],
+
+        // ADD this mapping:
+        OrderPlaced::class => [
+            SendOrderConfirmation::class,
+        ],
     ];
 
-    /**
-     * Register any events for your application.
-     */
     public function boot(): void
     {
         //
@@ -33,6 +38,7 @@ class EventServiceProvider extends ServiceProvider
      */
     public function shouldDiscoverEvents(): bool
     {
+        // keep false since you're manually mapping above
         return false;
     }
 }

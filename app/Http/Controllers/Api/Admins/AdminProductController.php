@@ -4,165 +4,155 @@ namespace App\Http\Controllers\Api\Admins;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\models\Product;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Arr;
+use App\Models\Product;
 use Illuminate\Support\Facades\Storage;
-/* 
- * AdminProductController handles product management for admins.
- * It includes methods to list, create, update, and show products.
- * All actions are protected by authentication and admin checks.
- */
+
 
 class AdminProductController extends Controller
 {
-    //auth:sanctum => Checks if the request comes from an authenticated user
-    //is_admin => Checks if the logged-in user is actually an admin (not just any user)
     public function __construct()
     {
-        $this->middleware(['auth:sanctum', 'is_admin']); //middleware act as security checkpoint to ensure only admins can access these routes
+        $this->middleware(['auth:sanctum', 'is_admin']);
     }
 
-
-    // Show all products with their categories
+    // List all products with category
     public function index()
     {
-        $products = Product::with('category')->latest()->get(); //get all product with their categories , ordered by latest first
-        return response()->json(['data' => $products], 200);
+        $products = Product::with('category')->latest()->get();
+
+        return response()->json([
+            'message' => 'Products found',
+            'data'    => $products, // already includes image_full_url accessor
+            'status'  => 'success'
+        ], 200);
     }
 
-    // add a new product
-    // public function store(Request $request)
-    // {
-    //     $validator = Validator::make($request->all(), [ // validate requested data all() means all fields in the request
-    //         'name' => 'required|string|max:255',
-    //         'description' => 'required|string',
-    //         'price' => 'required|numeric|min:0',
-    //         'discount_price' => 'nullable|numeric|min:0',
-    //         'category_id' => 'required|exists:categories,id',
-    //         'weight' => 'required|numeric|min:0',
-    //         'weight_unit' => 'required|string|in:kg,g,lb,oz',
-    //         'image_url' => 'url',
-    //     ]);
-
-    //     //check if validation fails
-    //     if ($validator->fails()) {
-    //         return response()->json(['errors' => $validator->errors()], 422);
-    //     } else {
-    //         $product = Product::create($validator->validated()); // Product::create() creates a new product with the validated data
-    //         return response()->json([
-    //             'message' => 'Product created successfully',
-    //             'data' => $product,
-    //             'status' => 'success'
-    //         ], 201);
-    //     }
-    // }
-
+    // Create
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
+        // Normalize empty strings to null so required_without works properly
+        $request->merge([
+            'image_url' => $request->filled('image_url') ? $request->input('image_url') : null,
+        ]);
+
+        $data = $request->validate([
             'name'           => 'required|string|max:255',
+            'name_en'        => 'nullable|string|max:255',
             'description'    => 'required|string',
+            'description_en' => 'nullable|string',
             'price'          => 'required|numeric|min:0',
             'discount_price' => 'nullable|numeric|min:0|lte:price',
             'category_id'    => 'required|exists:categories,id',
             'weight'         => 'required|numeric|min:0',
             'weight_unit'    => 'required|string|in:kg,g,lb,oz',
 
-            // Accept EITHER a file OR a URL
-            'image'          => 'required_without:image_url|image|mimes:jpg,jpeg,png,webp|max:4096',
-            'image_url'      => 'required_without:image|url',
+            // exactly one source: file OR url
+            'image'     => 'required_without:image_url|file|image|mimes:jpg,jpeg,png,webp,avif|max:4096',
+            'image_url' => 'required_without:image|nullable|url',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+        // If a file uploaded, store it and override image_url with relative path
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('products', 'public');
+            $data['image_url'] = $path;
         }
 
-        // Only take the fields you want to persist
-        $data = Arr::only($request->all(), [
+        $product = Product::create(Arr::only($data, [
             'name',
+            'name_en',
             'description',
+            'description_en',
             'price',
             'discount_price',
             'category_id',
             'weight',
-            'weight_unit'
-        ]);
-
-        // If a file was uploaded, store it and save its path to image_url
-        if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('products', 'public'); // storage/app/public/products/...
-            $data['image_url'] = $path; // store relative path in DB
-        } else {
-            // Otherwise use the provided remote URL
-            $data['image_url'] = $request->input('image_url');
-        }
-
-        $product = Product::create($data);
-
-        // Build response and include a browsable URL if it's a local path
-        $payload = $product->toArray();
-        if ($product->image_url && !str_starts_with($product->image_url, 'http')) {
-            $payload['image_full_url'] = Storage::disk('public')->url($product->image_url);
-        }
+            'weight_unit',
+            'image_url'
+        ]));
 
         return response()->json([
             'message' => 'Product created successfully',
-            'data'    => $payload,
-            'status'  => 'success'
+            'data'    => $product->fresh(), // has image_full_url accessor
+            'status'  => 'success',
         ], 201);
     }
 
-    // Show a specific product by ID
+
+    // Show one
     public function show($id)
     {
-        $product = Product::with('category')->find($id); //find product by id with its category
-        if (!$product) { //if product not found
+        $product = Product::with('category')->find($id);
+        if (!$product) {
             return response()->json(['message' => 'Product not found'], 404);
         }
-        return response()->json(['data' => $product], 200); //return product data
+
+        return response()->json(['data' => $product], 200);
     }
 
-    // Update a product by passing the ID
+    // Update
     public function update(Request $request, $id)
     {
         $product = Product::find($id);
         if (!$product) {
-            return response()->json(['Message' => 'product not found']);
+            return response()->json(['message' => 'Product not found'], 404);
         }
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'discount_price' => 'nullable|numeric|min:0',
-            'category_id' => 'required|exists:categories,id',
-            'weight' => 'required|numeric|min:0',
-            'weight_unit' => 'required|string|in:kg,g,lb,oz',
-            'image_url' => 'required|url',
+
+        $request->merge([
+            'image_url' => $request->filled('image_url') ? $request->input('image_url') : null,
         ]);
-        if ($product->update($data)) {
-            return response()->json([
-                'message' => 'Product updated successfully',
-                'data' => $product,
-                'status' => 'success'
-            ], 200);
-        } else {
-            return response()->json([
-                'message' => 'failed to update product',
-                'status' => 'error'
-            ]);
+
+        $data = $request->validate([
+            'name'           => 'sometimes|required|string|max:255',
+            'name_en'        => 'sometimes|nullable|string|max:255',
+            'description'    => 'sometimes|required|string',
+            'description_en' => 'sometimes|nullable|string',
+            'price'          => 'sometimes|required|numeric|min:0',
+            'discount_price' => 'sometimes|nullable|numeric|min:0|lte:price',
+            'category_id'    => 'sometimes|required|exists:categories,id',
+            'weight'         => 'sometimes|required|numeric|min:0',
+            'weight_unit'    => 'sometimes|required|string|in:kg,g,lb,oz',
+
+            // optional on update
+            'image'     => 'sometimes|nullable|file|image|mimes:jpg,jpeg,png,webp,avif|max:4096',
+            'image_url' => 'sometimes|nullable|url',
+        ]);
+
+        // If a new file is uploaded, delete old local file (if any) and store the new one
+        if ($request->hasFile('image')) {
+            if ($product->image_url && !str_starts_with($product->image_url, 'http')) {
+                Storage::disk('public')->delete($product->image_url);
+            }
+            $data['image_url'] = $request->file('image')->store('products', 'public');
+        } elseif (array_key_exists('image_url', $data)) {
+            // If image_url is provided (possibly null to clear), just assign it
+            // (Do not delete old file automatically when switching to a remote URL unless you want that)
         }
+
+        $product->update($data);
+
+        return response()->json([
+            'message' => 'Product updated successfully',
+            'data'    => $product->fresh(),
+            'status'  => 'success',
+        ], 200);
     }
 
-    // Delete a product by ID
+
+    // Delete
     public function destroy($id)
     {
         $product = Product::find($id);
-        if (!$product) { // check if product exists
+        if (!$product) {
             return response()->json(['message' => 'Product not found'], 404);
-        } else {
-            $product->delete();
-            return response()->json(['message' => 'Product has been deleted successfully ', 'status' => 200]);
         }
+
+        if ($product->image_url && !str_starts_with($product->image_url, 'http')) {
+            Storage::disk('public')->delete($product->image_url);
+        }
+
+        $product->delete();
+
+        return response()->json(['message' => 'Product deleted successfully', 'status' => 'success']);
     }
 }

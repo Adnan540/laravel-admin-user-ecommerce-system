@@ -11,7 +11,7 @@ class SendNewOrderNotification
 
     public function handle(\App\Events\OrderPlaced $event): void
     {
-        $order = $event->$order;
+        $order = $event->order;
         User::whereIn('role', ['admin', 'superadmin'])->get()
             ->each(fn($u) => $u->notify(new NewOrderNotification($order)));
     }

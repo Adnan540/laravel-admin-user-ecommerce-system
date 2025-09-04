@@ -69,9 +69,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);
     Route::delete('/auth/delete', [AuthController::class, 'deleteAccount']);
-    Route::get('/me', [ProfileController::class, 'show']);
-    Route::put('/me', [ProfileController::class, 'update']);
-    Route::put('/me/password', [PasswordController::class, 'update']);
+
+    Route::get('/me/show', [ProfileController::class, 'show']);
+    Route::put('/me/update', [ProfileController::class, 'update']);
+    Route::put('/me/update-password', [PasswordController::class, 'update']);
     Route::get('/me/orders', [OrdersController::class, 'index']);
     // Full access to user-related resources
     Route::apiResource('users', UserController::class);
