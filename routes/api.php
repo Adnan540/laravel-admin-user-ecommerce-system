@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\{
     CartController,
     KitchenController,
 };
+use App\Http\Controllers\Api\SearchController;
 use App\Http\Controllers\Api\CategoryController;
 use App\Http\Controllers\Api\Me\OrdersController;
 use App\Http\Controllers\Api\Me\ProfileController;
@@ -53,6 +54,7 @@ Route::post('/auth/admin-register', [AuthController::class, 'registerasAdmin']);
 Route::apiResource('products', ProductController::class);
 Route::apiResource('categories', CategoryController::class);
 Route::apiResource('kitchen', KitchenController::class);
+Route::get('/search', [SearchController::class, 'index']);
 
 
 // Public access to shipping methods
@@ -72,7 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/me/show', [ProfileController::class, 'show']);
     Route::put('/me/update', [ProfileController::class, 'update']);
-    Route::put('/me/update-password', [PasswordController::class, 'update']);
+    Route::put('/me/update-password', [PasswordController::class, 'updatePassword']);
     Route::get('/me/orders', [OrdersController::class, 'index']);
     // Full access to user-related resources
     Route::apiResource('users', UserController::class);

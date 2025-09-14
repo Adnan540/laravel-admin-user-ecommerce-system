@@ -12,16 +12,22 @@ class OrdersController extends Controller
         $perPage = $request->query('per_page', 10);
 
         $orders = $request->user()->orders()->latest()->paginate($perPage);
-
-        return response()->json([
-            'message' => 'Orders fetched',
-            'data'    => $orders->items(),
-            'meta'    => [
-                'current_page' => $orders->currentPage(),
-                'last_page'    => $orders->lastPage(),
-                'per_page'     => $orders->perPage(),
-                'total'        => $orders->total(),
-            ],
-        ]);
+        if ($orders == null) {
+            $message = [
+                'User has no orders',
+                $orders
+            ];
+        } else {
+            return response()->json([
+                'message' => 'Orders fetched',
+                'data'    => $orders->items(),
+                'meta'    => [
+                    'current_page' => $orders->currentPage(),
+                    'last_page'    => $orders->lastPage(),
+                    'per_page'     => $orders->perPage(),
+                    'total'        => $orders->total(),
+                ],
+            ]);
+        }
     }
 }

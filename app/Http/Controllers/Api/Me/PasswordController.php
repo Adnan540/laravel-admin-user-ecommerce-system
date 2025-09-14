@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Hash;
 
 class PasswordController extends Controller
 {
-    public function update(Request $request)
+    public function updatePassword(Request $request)
     {
         $request->validate([
             'current_password' => 'required',
