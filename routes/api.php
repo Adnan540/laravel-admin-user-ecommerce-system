@@ -62,11 +62,13 @@ Route::apiResource('shipping-methods', ShippingMethodController::class)->only(['
 Route::apiResource('traders-applications', TraderApplicationController::class);
 Route::apiResource('contact', ContactMessagesController::class);
 Route::apiResource('copons', \App\Http\Controllers\Api\CouponController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
+
 /*
 |--------------------------------------------------------------------------
 | Protected Routes (Require Login)
 |--------------------------------------------------------------------------
 */
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/me', [AuthController::class, 'me']);

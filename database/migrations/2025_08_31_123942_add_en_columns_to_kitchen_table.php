@@ -9,15 +9,25 @@ return new class extends Migration
     public function up()
     {
         Schema::table('kitchen', function (Blueprint $table) {
-            $table->string('title_en')->nullable()->after('title');
-            $table->text('description_en')->nullable()->after('description');
+            if (!Schema::hasColumn('kitchen', 'title_en')) {
+                $table->string('title_en')->nullable()->after('title');
+            }
+
+            if (!Schema::hasColumn('kitchen', 'description_en')) {
+                $table->text('description_en')->nullable()->after('description');
+            }
         });
     }
 
     public function down()
     {
         Schema::table('kitchen', function (Blueprint $table) {
-            $table->dropColumn(['title_en', 'description_en']);
+            if (Schema::hasColumn('kitchen', 'title_en')) {
+                $table->dropColumn('title_en');
+            }
+            if (Schema::hasColumn('kitchen', 'description_en')) {
+                $table->dropColumn('description_en');
+            }
         });
     }
 };
